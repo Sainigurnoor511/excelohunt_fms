@@ -19,7 +19,11 @@ export function Clients() {
     if (!confirmDelete) return;
     setDeletingId(id);
     try {
-      const { error } = await supabase.from("clients").update({ is_deleted: true }).eq("id", id);
+      const { error } = await supabase
+        .from("clients")
+        //@ts-ignore
+        .update({ is_deleted: true })
+        .eq("id", id);
       if (error) throw error;
       await refetch();
     } catch (err) {
@@ -75,7 +79,7 @@ export function Clients() {
                   {client.email && <p>Email: {client.email}</p>}
                   {client.phone_number && <p>Phone: {client.phone_number}</p>}
                 </div>
-                <Badge variant={client.is_active ? "success" : "secondary"} className="mt-4">
+                <Badge variant={client.is_active ? "default" : "destructive"} className="mt-4">
                   {client.is_active ? "Active" : "Inactive"}
                 </Badge>
               </CardContent>

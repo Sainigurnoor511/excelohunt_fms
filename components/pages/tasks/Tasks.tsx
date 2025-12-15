@@ -54,9 +54,9 @@ export function Tasks() {
                     <Badge
                       variant={
                         task.status === "completed"
-                          ? "success"
+                          ? "default"
                           : task.status === "pending_approval"
-                          ? "warning"
+                          ? "secondary"
                           : task.status === "in_progress"
                           ? "default"
                           : "secondary"

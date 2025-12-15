@@ -21,6 +21,7 @@ export function Instances() {
     if (!confirmDelete) return;
     setDeletingId(id);
     try {
+      // @ts-ignore
       const { error } = await supabase.from("process_instances").update({ is_deleted: true }).eq("id", id);
       if (error) throw error;
       await refetch();
@@ -64,7 +65,7 @@ export function Instances() {
                     <Badge
                       variant={
                         instance.status === "active"
-                          ? "success"
+                          ? "default"
                           : instance.status === "completed"
                           ? "default"
                           : "secondary"

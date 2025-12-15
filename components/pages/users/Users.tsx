@@ -35,7 +35,7 @@ export function Users() {
 
       {users && users.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {users.map((user) => (
+          {(users as Array<{ id: string; name: string; email: string; role: string }>).map((user) => (
             <Card key={user.id}>
               <CardHeader>
                 <CardTitle>{user.name}</CardTitle>

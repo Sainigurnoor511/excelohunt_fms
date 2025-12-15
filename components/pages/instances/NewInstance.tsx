@@ -70,7 +70,8 @@ export function NewInstance() {
             templateTask.sla_hours
           );
 
-          await supabase.from("instance_task_statuses").insert({
+          // @ts-ignore
+          await supabase.from("instance_task_statuses").insert([{
             instance_id: instance.id,
             template_task_id: templateTask.id,
             assigned_to_user_id: assignment.assignee,
@@ -78,7 +79,7 @@ export function NewInstance() {
             status: templateTask.order === 0 ? "pending" : "not_started",
             due_date: dueDate.toISOString(),
             estimated_hours: templateTask.task_duration_minutes / 60,
-          });
+          }]);
 
           // Update current date for next task
           currentDate = new Date(dueDate);
@@ -129,7 +130,13 @@ export function NewInstance() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="template">Template *</Label>
-                <Select id="template" value={templateId} onChange={(e) => setTemplateId(e.target.value)} required>
+                <select
+                  id="template"
+                  value={templateId}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTemplateId(e.target.value)}
+                  required
+                  className="w-full border p-2 rounded"
+                >
                   <option value="">Select a template</option>
                   {templates
                     ?.filter((t) => t.is_active)
@@ -138,7 +145,7 @@ export function NewInstance() {
                         {template.name}
                       </option>
                     ))}
-                </Select>
+                </select>
               </div>
               <Button type="button" onClick={handleNext} disabled={!templateId}>
                 Next
@@ -155,14 +162,20 @@ export function NewInstance() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="client">Client *</Label>
-                <Select id="client" value={clientId} onChange={(e) => setClientId(e.target.value)} required>
+                <select
+                  id="client"
+                  value={clientId}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setClientId(e.target.value)}
+                  required
+                  className="w-full border p-2 rounded"
+                >
                   <option value="">Select a client</option>
                   {clients?.map((client) => (
                     <option key={client.id} value={client.id}>
                       {client.client_name} {client.company_name && `(${client.company_name})`}
                     </option>
                   ))}
-                </Select>
+                </select>
               </div>
               <div className="flex gap-4">
                 <Button type="button" variant="outline" onClick={() => setStep(1)}>
@@ -220,19 +233,19 @@ export function NewInstance() {
                           <Label>Assign To *</Label>
                           <Select
                             value={assignments[task.id]?.assignee || ""}
-                            onChange={(e) =>
+                            onValueChange={(value) =>
                               setAssignments({
                                 ...assignments,
                                 [task.id]: {
                                   ...assignments[task.id],
-                                  assignee: e.target.value,
+                                  assignee: value,
                                 },
                               })
                             }
                             required
                           >
                             <option value="">Select assignee</option>
-                            {users
+                            {(users as Array<{ id: string; name: string; role: string }> | undefined)
                               ?.filter((u) => ["member", "controller"].includes(u.role))
                               .map((user) => (
                                 <option key={user.id} value={user.id}>
@@ -246,25 +259,26 @@ export function NewInstance() {
                             <Label>Approver *</Label>
                             <Select
                               value={assignments[task.id]?.approver || ""}
-                              onChange={(e) =>
+                              onValueChange={(value) =>
                                 setAssignments({
                                   ...assignments,
                                   [task.id]: {
                                     ...assignments[task.id],
-                                    approver: e.target.value,
+                                    approver: value,
                                   },
                                 })
                               }
                               required
                             >
                               <option value="">Select approver</option>
-                              {users
+                              {(users as Array<{ id: string; name: string; role: string }> | undefined)
                                 ?.filter((u) => ["admin", "controller"].includes(u.role))
                                 .map((user) => (
                                   <option key={user.id} value={user.id}>
                                     {user.name} ({user.role})
-                                  </option>
-                                ))}
+                                    </option>
+                                  )
+                                )}
                             </Select>
                           </div>
                         )}

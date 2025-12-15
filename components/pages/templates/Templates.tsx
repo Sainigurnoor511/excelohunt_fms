@@ -21,6 +21,7 @@ export function Templates() {
     if (!confirmDelete) return;
     setDeletingId(id);
     try {
+      // @ts-ignore
       const { error } = await supabase.from("process_templates").update({ is_deleted: true }).eq("id", id);
       if (error) throw error;
       await refetch();
@@ -61,7 +62,7 @@ export function Templates() {
                 <div className="flex items-center justify-between">
                   <CardTitle>{template.name}</CardTitle>
                   <div className="flex items-center gap-2">
-                    <Badge variant={template.is_active ? "success" : "secondary"}>
+                    <Badge variant={template.is_active ? "default" : "secondary"}>
                       {template.is_active ? "Active" : "Inactive"}
                     </Badge>
                     <Button

@@ -26,7 +26,7 @@ export function TemplateDetail() {
         <h1 className="text-3xl font-bold text-gray-900">{template.name}</h1>
         <div className="mt-2 flex items-center gap-4">
           {template.category && <span className="text-gray-600">Category: {template.category}</span>}
-          <Badge variant={template.is_active ? "success" : "secondary"}>
+          <Badge variant={template.is_active ? "default" : "secondary"}>
             {template.is_active ? "Active" : "Inactive"}
           </Badge>
         </div>
@@ -71,7 +71,7 @@ export function TemplateDetail() {
                       <span>Duration: {task.task_duration_minutes} min</span>
                       <span>SLA: {task.sla_hours} hours</span>
                       {task.requires_approval && (
-                        <Badge variant="warning" className="text-xs">
+                        <Badge variant="secondary" className="text-xs">
                           Requires Approval
                         </Badge>
                       )}

@@ -29,7 +29,7 @@ export function InstanceDetail() {
           <Badge
             variant={
               instance.status === "active"
-                ? "success"
+                ? "default"
                 : instance.status === "completed"
                 ? "default"
                 : "secondary"
@@ -68,9 +68,9 @@ export function InstanceDetail() {
                             <Badge
                               variant={
                                 task.status === "completed"
-                                  ? "success"
+                                  ? "default"
                                   : task.status === "pending_approval"
-                                  ? "warning"
+                                  ? "secondary"
                                   : task.status === "in_progress"
                                   ? "default"
                                   : "secondary"

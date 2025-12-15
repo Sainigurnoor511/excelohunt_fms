@@ -61,7 +61,17 @@ export function TaskDetail() {
     return <div className="p-8">Task not found</div>;
   }
 
-  const templateTask = task.template_tasks;
+  type TemplateTask = {
+    id: string;
+    name: string;
+    description: string;
+    requires_approval?: boolean;
+    checklist?: ChecklistItem[];
+    // add more fields if necessary
+  };
+
+  // Fix for types: tell TypeScript that task is not never
+  const templateTask = (task as { template_tasks?: TemplateTask }).template_tasks;
   const checklist: ChecklistItem[] = templateTask?.checklist || [];
 
   const handleChecklistChange = (itemId: string, checked: boolean, inputValue?: string) => {
@@ -86,7 +96,7 @@ export function TaskDetail() {
       ? [
           {
             id: crypto.randomUUID(),
-            user_id: task.assigned_to_user_id,
+            user_id: (task as any).assigned_to_user_id,
             user_name: "Current User", // Should fetch from user context
             text: comment,
             created_at: new Date().toISOString(),
@@ -116,7 +126,8 @@ export function TaskDetail() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">{templateTask?.name || "Task"}</h1>
         <p className="mt-2 text-gray-600">
-          {task.process_instances?.name} - {task.process_instances?.clients?.client_name}
+          {/* Safely access process instance and client info */}
+          {(task as any)?.process_instances?.name || "No Process"} - {(task as any)?.process_instances?.clients?.client_name || "No Client"}
         </p>
       </div>
 

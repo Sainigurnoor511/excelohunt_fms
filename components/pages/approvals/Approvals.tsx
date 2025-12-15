@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useUser } from "@/lib/hooks/use-user";
-import { usePendingApprovals, useUpdateTaskStatus } from "@/lib/hooks/use-tasks";
+import {
+  usePendingApprovals,
+  useUpdateTaskStatus,
+} from "@/lib/hooks/use-tasks";
 import { formatDate } from "@/lib/utils/date-calculator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,47 +86,53 @@ export function Approvals() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>{templateTask?.name || "Task"}</CardTitle>
-                    <Badge variant="warning">Pending Approval</Badge>
+                    <Badge variant="secondary">Pending Approval</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm text-gray-600">
                     {instance && (
                       <p>
-                        <span className="font-medium">Instance:</span> {instance.name}
+                        <span className="font-medium">Instance:</span>{" "}
+                        {instance.name}
                       </p>
                     )}
                     {client && (
                       <p>
-                        <span className="font-medium">Client:</span> {client.client_name}
+                        <span className="font-medium">Client:</span>{" "}
+                        {client.client_name}
                         {client.company_name && ` (${client.company_name})`}
                       </p>
                     )}
                     {assignedUser && (
                       <p>
-                        <span className="font-medium">Assigned to:</span> {assignedUser.name}
+                        <span className="font-medium">Assigned to:</span>{" "}
+                        {assignedUser.name}
                       </p>
                     )}
                     {task.completed_at && (
                       <p>
-                        <span className="font-medium">Submitted:</span> {formatDate(task.completed_at)}
+                        <span className="font-medium">Submitted:</span>{" "}
+                        {formatDate(task.completed_at)}
                       </p>
                     )}
                   </div>
 
-                  {task.checklist_values && task.checklist_values.length > 0 && (
-                    <div className="mt-4">
-                      <p className="font-medium text-sm mb-2">Checklist:</p>
-                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                        {task.checklist_values.map((cv: any, idx: number) => (
-                          <li key={idx}>
-                            {cv.checked ? "✓" : "✗"} {cv.text || `Item ${idx + 1}`}
-                            {cv.inputValue && ` - ${cv.inputValue}`}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {task.checklist_values &&
+                    task.checklist_values.length > 0 && (
+                      <div className="mt-4">
+                        <p className="font-medium text-sm mb-2">Checklist:</p>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+                          {task.checklist_values.map((cv: any, idx: number) => (
+                            <li key={idx}>
+                              {cv.checked ? "✓" : "✗"}{" "}
+                              {cv.text || `Item ${idx + 1}`}
+                              {cv.inputValue && ` - ${cv.inputValue}`}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
                   {task.comments && task.comments.length > 0 && (
                     <div className="mt-4">
@@ -164,7 +173,10 @@ export function Approvals() {
                         />
                       </div>
                       <div className="flex gap-2">
-                        <Button onClick={() => handleApprove(task.id)} disabled={updateTaskStatus.isPending}>
+                        <Button
+                          onClick={() => handleApprove(task.id)}
+                          disabled={updateTaskStatus.isPending}
+                        >
                           Approve
                         </Button>
                         <Button
@@ -187,7 +199,9 @@ export function Approvals() {
                     </div>
                   ) : (
                     <div className="mt-4 flex gap-2">
-                      <Button onClick={() => setSelectedTask(task.id)}>Review & Approve/Reject</Button>
+                      <Button onClick={() => setSelectedTask(task.id)}>
+                        Review & Approve/Reject
+                      </Button>
                     </div>
                   )}
                 </CardContent>
@@ -205,4 +219,3 @@ export function Approvals() {
     </div>
   );
 }
-

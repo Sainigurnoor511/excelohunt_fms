@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useCreateClient } from "@/lib/hooks/use-clients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,10 +39,11 @@ export function NewClient() {
         notes: notes || undefined,
       });
 
+      toast.success("Client created");
       router.push("/clients");
     } catch (error) {
       console.error("Failed to create client:", error);
-      alert("Failed to create client. Please try again.");
+      toast.error("Failed to create client. Please try again.");
     }
   };
 

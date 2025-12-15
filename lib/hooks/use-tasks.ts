@@ -97,18 +97,21 @@ export function useUpdateTaskStatus() {
       checklistValues,
       comments,
       deliverableLink,
+      approverId,
     }: {
       taskId: string;
       status: string;
       checklistValues?: any[];
       comments?: any[];
       deliverableLink?: string;
+      approverId?: string;
     }) => {
       const updateData: any = { status, updated_at: new Date().toISOString() };
 
       if (checklistValues) updateData.checklist_values = checklistValues;
       if (comments) updateData.comments = comments;
       if (deliverableLink) updateData.deliverable_link = deliverableLink;
+      if (approverId) updateData.approver_id = approverId;
 
       if (status === "in_progress" && !updateData.started_at) {
         updateData.started_at = new Date().toISOString();
@@ -120,13 +123,35 @@ export function useUpdateTaskStatus() {
 
       const { data, error } = await supabase
         .from("instance_task_statuses")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", taskId)
         .select()
         .single();
 
       if (error) throw error;
       return data as InstanceTaskStatus;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["instance-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["instances"] });
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from("instance_task_statuses")
+        .delete()
+        .eq("id", taskId);
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });

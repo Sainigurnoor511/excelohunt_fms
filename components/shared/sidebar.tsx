@@ -14,6 +14,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 const navigation = [
@@ -28,12 +29,15 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: user } = useUser();
+  const { data: user, isLoading } = useUser();
   const router = useRouter();
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    // Clear cached queries so next session starts clean
+    queryClient.clear();
     router.push("/login");
     router.refresh();
   };
@@ -44,6 +48,19 @@ export function Sidebar() {
     if (item.href === "/approvals" && !["admin", "controller"].includes(user?.role || "")) return false;
     return true;
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">
+        <div className="flex h-16 items-center border-b border-gray-200 px-6">
+          <h1 className="text-xl font-semibold text-gray-900">FMS</h1>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">

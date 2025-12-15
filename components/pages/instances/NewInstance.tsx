@@ -1,8 +1,9 @@
 "use client";
-
+ 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useTemplates, useTemplateTasks } from "@/lib/hooks/use-templates";
 import { useClients } from "@/lib/hooks/use-clients";
 import { useCreateInstance } from "@/lib/hooks/use-instances";
@@ -12,7 +13,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function NewInstance() {
@@ -86,10 +86,11 @@ export function NewInstance() {
         }
       }
 
+      toast.success("Instance created");
       router.push(`/instances/${instance.id}`);
     } catch (error) {
       console.error("Failed to create instance:", error);
-      alert("Failed to create instance. Please try again.");
+      toast.error("Failed to create instance. Please try again.");
     }
   };
 
@@ -231,18 +232,19 @@ export function NewInstance() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label>Assign To *</Label>
-                          <Select
+                          <select
                             value={assignments[task.id]?.assignee || ""}
-                            onValueChange={(value) =>
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                               setAssignments({
                                 ...assignments,
                                 [task.id]: {
                                   ...assignments[task.id],
-                                  assignee: value,
+                                  assignee: e.target.value,
                                 },
                               })
                             }
                             required
+                            className="w-full border p-2 rounded"
                           >
                             <option value="">Select assignee</option>
                             {(users as Array<{ id: string; name: string; role: string }> | undefined)
@@ -252,23 +254,24 @@ export function NewInstance() {
                                   {user.name} ({user.role})
                                 </option>
                               ))}
-                          </Select>
+                          </select>
                         </div>
                         {task.requires_approval && (
                           <div>
                             <Label>Approver *</Label>
-                            <Select
+                            <select
                               value={assignments[task.id]?.approver || ""}
-                              onValueChange={(value) =>
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                                 setAssignments({
                                   ...assignments,
                                   [task.id]: {
                                     ...assignments[task.id],
-                                    approver: value,
+                                    approver: e.target.value,
                                   },
                                 })
                               }
                               required
+                              className="w-full border p-2 rounded"
                             >
                               <option value="">Select approver</option>
                               {(users as Array<{ id: string; name: string; role: string }> | undefined)
@@ -276,10 +279,9 @@ export function NewInstance() {
                                 .map((user) => (
                                   <option key={user.id} value={user.id}>
                                     {user.name} ({user.role})
-                                    </option>
-                                  )
-                                )}
-                            </Select>
+                                  </option>
+                                ))}
+                            </select>
                           </div>
                         )}
                       </div>

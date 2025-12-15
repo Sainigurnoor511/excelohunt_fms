@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useInstances } from "@/lib/hooks/use-instances";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -25,9 +26,10 @@ export function Instances() {
       const { error } = await supabase.from("process_instances").update({ is_deleted: true }).eq("id", id);
       if (error) throw error;
       await refetch();
+      toast.success("Instance deleted");
     } catch (err) {
       console.error("Failed to delete instance", err);
-      alert("Failed to delete instance.");
+      toast.error("Failed to delete instance");
     } finally {
       setDeletingId(null);
     }

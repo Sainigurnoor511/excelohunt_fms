@@ -120,3 +120,25 @@ export function useCreateTemplateTask() {
   });
 }
 
+export function useDeleteTemplateTask() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { id: string; template_id: string }) => {
+      const { error } = await supabase
+        .from("template_tasks")
+        .delete()
+        .eq("id", payload.id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["template-tasks", variables.template_id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["templates"] });
+    },
+  });
+}
+

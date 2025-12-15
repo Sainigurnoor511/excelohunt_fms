@@ -1,9 +1,12 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useTemplate, useTemplateTasks } from "@/lib/hooks/use-templates";
+import { useTemplate, useTemplateTasks, useDeleteTemplateTask } from "@/lib/hooks/use-templates";
+import { useUser } from "@/lib/hooks/use-user";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
 
 export function TemplateDetail() {
   const params = useParams<{ id: string }>();
@@ -11,6 +14,10 @@ export function TemplateDetail() {
 
   const { data: template, isLoading: templateLoading } = useTemplate(id);
   const { data: tasks, isLoading: tasksLoading } = useTemplateTasks(id);
+  const { data: user } = useUser();
+  const deleteTask = useDeleteTemplateTask();
+
+  const canManageTasks = user && ["admin", "controller"].includes(user.role);
 
   if (templateLoading || tasksLoading) {
     return <div className="p-8">Loading...</div>;
@@ -19,6 +26,14 @@ export function TemplateDetail() {
   if (!template) {
     return <div className="p-8">Template not found</div>;
   }
+
+  const handleDeleteTask = (taskId: string) => {
+    if (!id || !canManageTasks) return;
+    const confirmed = window.confirm("Are you sure you want to delete this task from the template?");
+    if (!confirmed) return;
+
+    deleteTask.mutate({ id: taskId, template_id: id });
+  };
 
   return (
     <div className="p-8">
@@ -77,6 +92,20 @@ export function TemplateDetail() {
                       )}
                     </div>
                   </div>
+                  {canManageTasks && (
+                    <div className="ml-4">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleDeleteTask(task.id)}
+                        disabled={deleteTask.isPending}
+                        aria-label="Delete task"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useTemplates } from "@/lib/hooks/use-templates";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -25,9 +26,10 @@ export function Templates() {
       const { error } = await supabase.from("process_templates").update({ is_deleted: true }).eq("id", id);
       if (error) throw error;
       await refetch();
+      toast.success("Template deleted");
     } catch (err) {
       console.error("Failed to delete template", err);
-      alert("Failed to delete template.");
+      toast.error("Failed to delete template");
     } finally {
       setDeletingId(null);
     }

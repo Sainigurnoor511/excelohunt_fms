@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useUser } from "@/lib/hooks/use-user";
-import { useMyTasks, useUpdateTaskStatus } from "@/lib/hooks/use-tasks";
+import { useMyTasks, useUpdateTaskStatus, useDeleteTask } from "@/lib/hooks/use-tasks";
 import { formatDate, getTimeRemaining } from "@/lib/utils/date-calculator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +14,7 @@ export function Tasks() {
   const { data: user } = useUser();
   const { data: tasks, isLoading } = useMyTasks(user?.id || null);
   const updateTaskStatus = useUpdateTaskStatus();
+  const deleteTask = useDeleteTask();
 
   const handleStartTask = async (taskId: string) => {
     try {
@@ -21,7 +24,21 @@ export function Tasks() {
       });
     } catch (error) {
       console.error("Failed to start task:", error);
-      alert("Failed to start task. Please try again.");
+      toast.error("Failed to start task. Please try again.");
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!user || !["admin", "controller"].includes(user.role)) return;
+    const confirmed = window.confirm("Delete this task? This cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      await deleteTask.mutateAsync(taskId);
+      toast.success("Task deleted");
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+      toast.error("Failed to delete task. Please try again.");
     }
   };
 
@@ -64,6 +81,17 @@ export function Tasks() {
                     >
                       {task.status.replace("_", " ")}
                     </Badge>
+                    {user && ["admin", "controller"].includes(user.role) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleDeleteTask(task.id)}
+                        title="Delete task"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -129,4 +157,3 @@ export function Tasks() {
     </div>
   );
 }
-

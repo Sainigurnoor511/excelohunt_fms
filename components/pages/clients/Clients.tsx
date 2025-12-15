@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useClients } from "@/lib/hooks/use-clients";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -26,9 +27,10 @@ export function Clients() {
         .eq("id", id);
       if (error) throw error;
       await refetch();
+      toast.success("Client deleted");
     } catch (err) {
       console.error("Failed to delete client", err);
-      alert("Failed to delete client.");
+      toast.error("Failed to delete client");
     } finally {
       setDeletingId(null);
     }

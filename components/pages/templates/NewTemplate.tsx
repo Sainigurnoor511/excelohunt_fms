@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { toast } from "sonner";
 import { useCreateTemplate, useCreateTemplateTask } from "@/lib/hooks/use-templates";
 import { useUser } from "@/lib/hooks/use-user";
 import type { ChecklistItem } from "@/lib/types/database";
@@ -110,6 +111,7 @@ export function NewTemplate() {
         });
       }
 
+      toast.success("Template created");
       router.push(`/templates/${template.id}`);
     } catch (error: any) {
       console.error("Failed to create template:", error);
@@ -121,7 +123,7 @@ export function NewTemplate() {
         code: error?.code,
         error: error?.error,
       });
-      alert(`Failed to create template: ${errorMessage}`);
+      toast.error(`Failed to create template: ${errorMessage}`);
     }
   };
 

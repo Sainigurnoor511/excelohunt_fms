@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +11,19 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff } from "lucide-react";
 
+const loginSchema = z.object({
+  email: z
+    .string()
+    .email({ message: "Please enter a valid email address." }),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters." }),
+});
+
+const signUpSchema = loginSchema.extend({
+  name: z.string().min(2, "Full name must be at least 2 characters."),
+});
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,9 +31,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+    name?: string;
+  }>({});
   const [signUpMessage, setSignUpMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Check if Supabase is configured
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -52,35 +73,63 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
     setLoading(true);
 
     try {
+      const parsed = loginSchema.safeParse({ email, password });
+      if (!parsed.success) {
+        const fe = parsed.error.flatten().fieldErrors;
+        setFieldErrors({
+          email: fe.email?.[0],
+          password: fe.password?.[0],
+        });
+        setError("Please fix the highlighted fields.");
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: parsed.data.email,
+        password: parsed.data.password,
       });
 
       if (error) throw error;
 
       if (data.user) {
-        // Check if user exists in users table, if not create one
-        const { data: userData } = await supabase
-          .from("users")
-          .select("*")
-          .eq("auth_id", data.user.id)
-          .single();
+        // Ensure there's a users row linked to this auth user for RLS (e.g. templates, approvals)
+        try {
+          const email = data.user.email;
+          if (email) {
+            const { data: existingUser } = await supabase
+              .from("users")
+              .select("*")
+              .eq("email", email)
+              .maybeSingle();
 
-        if (!userData) {
-          // Create user record if it doesn't exist
-          await supabase.from("users").insert({
-            auth_id: data.user.id,
-            email: data.user.email!,
-            name: data.user.email!.split("@")[0],
-            role: "member",
-            is_active: true,
-          });
+            if (existingUser) {
+              if (!existingUser.auth_id) {
+                await supabase
+                  .from("users")
+                  .update({ auth_id: data.user.id })
+                  .eq("id", existingUser.id);
+              }
+            } else {
+              // Fallback: create a member record for self-service signups
+              await supabase.from("users").insert({
+                auth_id: data.user.id,
+                email,
+                name: email.split("@")[0],
+                role: "member",
+                is_active: true,
+              });
+            }
+          }
+        } catch (syncError) {
+          console.error("Failed to sync auth user to users table", syncError);
         }
 
+        // Clear any cached data from previous sessions so the dashboard loads fresh data
+        queryClient.clear();
         router.push("/dashboard");
         router.refresh();
       }
@@ -100,14 +149,27 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setSignUpMessage(null);
+    setFieldErrors({});
     setLoading(true);
 
     try {
+      const parsed = signUpSchema.safeParse({ email, password, name });
+      if (!parsed.success) {
+        const fe = parsed.error.flatten().fieldErrors;
+        setFieldErrors({
+          email: fe.email?.[0],
+          password: fe.password?.[0],
+          name: fe.name?.[0],
+        });
+        setError("Please fix the highlighted fields.");
+        return;
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
+        email: parsed.data.email,
+        password: parsed.data.password,
         options: {
-          data: { name },
+          data: { name: parsed.data.name },
         },
       });
 
@@ -170,8 +232,11 @@ export default function LoginPage() {
                   placeholder="John Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  required={isSignUp}
+                  aria-invalid={!!fieldErrors.name}
                 />
+                {fieldErrors.name && (
+                  <p className="text-xs text-red-600">{fieldErrors.name}</p>
+                )}
               </div>
             )}
             <div className="space-y-2">
@@ -182,8 +247,11 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
+                aria-invalid={!!fieldErrors.email}
               />
+              {fieldErrors.email && (
+                <p className="text-xs text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -194,7 +262,7 @@ export default function LoginPage() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
+                  aria-invalid={!!fieldErrors.password}
                   className="pr-10"
                 />
                 <button
@@ -210,6 +278,15 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {isSignUp && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Password must be at least 6 characters. For better security, use a mix of
+                  letters, numbers, and symbols.
+                </p>
+              )}
+              {fieldErrors.password && (
+                <p className="text-xs text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading

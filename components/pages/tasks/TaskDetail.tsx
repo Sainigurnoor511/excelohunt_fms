@@ -5,7 +5,9 @@ import { useRouter, useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useUpdateTaskStatus } from "@/lib/hooks/use-tasks";
-import type { ChecklistItem, ChecklistValue } from "@/lib/types/database";
+import type { ChecklistItem, ChecklistValue, User } from "@/lib/types/database";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useUser } from "@/lib/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +18,7 @@ export function TaskDetail() {
   const params = useParams<{ id: string }>();
   const taskId = params?.id?.toString() || "";
   const supabase = createClient();
+  const { data: currentUser } = useUser();
   const updateTaskStatus = useUpdateTaskStatus();
 
   const { data: task, isLoading } = useQuery({
@@ -52,6 +55,23 @@ export function TaskDetail() {
   const [checklistValues, setChecklistValues] = useState<ChecklistValue[]>([]);
   const [comment, setComment] = useState("");
   const [deliverableLink, setDeliverableLink] = useState("");
+  const [approverId, setApproverId] = useState<string | undefined>(undefined);
+
+  const { data: controllers } = useQuery({
+    queryKey: ["controllers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, name, email, role")
+        .eq("role", "controller")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      return data as Pick<User, "id" | "name" | "email" | "role">[];
+    },
+    enabled: !!(task as any)?.template_tasks?.requires_approval,
+  });
 
   if (isLoading) {
     return <div className="p-8">Loading...</div>;
@@ -73,6 +93,7 @@ export function TaskDetail() {
   // Fix for types: tell TypeScript that task is not never
   const templateTask = (task as { template_tasks?: TemplateTask }).template_tasks;
   const checklist: ChecklistItem[] = templateTask?.checklist || [];
+  const requiresApproval = !!templateTask?.requires_approval;
 
   const handleChecklistChange = (itemId: string, checked: boolean, inputValue?: string) => {
     setChecklistValues((prev) => {
@@ -89,15 +110,18 @@ export function TaskDetail() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const requiresApproval = templateTask?.requires_approval;
+    if (requiresApproval && !approverId) {
+      alert("Please select a controller to send this task for approval.");
+      return;
+    }
     const status = requiresApproval ? "pending_approval" : "completed";
 
     const comments = comment
       ? [
           {
             id: crypto.randomUUID(),
-            user_id: (task as any).assigned_to_user_id,
-            user_name: "Current User", // Should fetch from user context
+            user_id: currentUser?.id || (task as any).assigned_to_user_id,
+            user_name: currentUser?.name || "Current User",
             text: comment,
             created_at: new Date().toISOString(),
           },
@@ -111,6 +135,7 @@ export function TaskDetail() {
         checklistValues,
         comments,
         deliverableLink: deliverableLink || undefined,
+        approverId: requiresApproval ? approverId : undefined,
       });
 
       router.push("/tasks");
@@ -132,6 +157,44 @@ export function TaskDetail() {
       </div>
 
       <form onSubmit={handleSubmit}>
+        {templateTask?.requires_approval && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Approval</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-sm text-gray-600">
+                This task requires approval. Select a controller to send this task to for approval.
+              </p>
+              <Select
+                value={approverId}
+                onValueChange={(value) => setApproverId(value)}
+              >
+                <SelectTrigger className="w-full max-w-sm">
+                  <SelectValue placeholder="Select controller" />
+                </SelectTrigger>
+                <SelectContent>
+                  {controllers && controllers.length > 0 ? (
+                    controllers.map((controller) => (
+                      <SelectItem key={controller.id} value={controller.id}>
+                        <span className="font-medium">{controller.name}</span>
+                        <span className="ml-2 text-xs text-gray-500">
+                          {controller.email}
+                        </span>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="">
+                      <span className="text-gray-500 text-sm">
+                        No controllers available. Please contact an admin.
+                      </span>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        )}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Checklist</CardTitle>

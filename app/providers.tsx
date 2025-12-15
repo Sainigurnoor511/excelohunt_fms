@@ -9,8 +9,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000, // 1 minute
+            // Always refetch on mount so dashboards don't show stale data
+            staleTime: 0,
             refetchOnWindowFocus: false,
+            refetchOnMount: "always",
           },
         },
       })
